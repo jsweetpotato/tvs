@@ -1,12 +1,23 @@
 import * as THREE from "three";
 import * as dat from "dat.gui";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
+import { TGALoader } from "three/examples/jsm/loaders/TGALoader";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 
 const tv = require("url:./assets/tv.fbx");
 const screen = require("url:./assets/screen.fbx");
+const TV_COLOR_URL = require("url:./assets/textures/TV_Color.tga");
+const TV_METALLIC_URL = require("url:./assets/textures/TV_Metallic.tga");
+const TV_NORMAL_URL = require("url:./assets/textures/TV_Normal_G+.tga");
+const TV_OCCULSION_URL = require("url:./assets/textures/TV_Occlusion.tga");
+const TV_ROUGHNESS_URL = require("url:./assets/textures/TV_Roughness.tga");
+
+const TV_COLOR = new TGALoader().load(TV_COLOR_URL);
+const TV_METALLIC = new TGALoader().load(TV_METALLIC_URL);
+const TV_NORMAL = new TGALoader().load(TV_NORMAL_URL);
+const TV_OCCULSION = new TGALoader().load(TV_OCCULSION_URL);
+const TV_ROUGHNESS = new TGALoader().load(TV_ROUGHNESS_URL);
 
 class App {
   constructor() {
@@ -49,16 +60,30 @@ class App {
   }
 
   _setLight() {
-    const light1 = new THREE.AmbientLight(0x2fafdf, 1);
-    this._scene.add(light1);
+    const light = new THREE.AmbientLight(0xffffff, 0.5);
 
-    const pointLight = new THREE.PointLight(0xffaf00, 3, 100);
-    pointLight.position.set(1, 4, 3);
-    this._scene.add(pointLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(6, 15, 3);
+
+    const pointLight2 = new THREE.PointLight(0xfa1faf, 0.5, 20);
+    pointLight2.position.set(6, 6, 7);
+    const pointLight3 = new THREE.PointLight(0x11afdf, 0.5, 20);
+    pointLight3.position.set(-4, 3, 6);
 
     const sphereSize = 1;
     const pointLightHelper = new THREE.PointLightHelper(pointLight, sphereSize);
-    this._scene.add(pointLightHelper);
+    const pointLightHelper2 = new THREE.PointLightHelper(pointLight2, sphereSize);
+    const pointLightHelper3 = new THREE.PointLightHelper(pointLight3, sphereSize);
+
+    this._scene.add(
+      light,
+      pointLight,
+      pointLight2,
+      pointLight3,
+      pointLightHelper,
+      pointLightHelper2,
+      pointLightHelper3
+    );
   }
 
   _setCamera() {
@@ -67,49 +92,73 @@ class App {
   }
 
   _setObject() {
-    // material
+
+
+    // tv material
+    const tvMat = new THREE.MeshStandardMaterial({
+      map: TV_COLOR,
+      normalMap: TV_NORMAL,
+      roughnessMap: TV_ROUGHNESS,
+      roughness: 0.5,
+      metalnessMap: TV_METALLIC,
+      metalness: 0.7,
+      aoMap: TV_OCCULSION,
+      aoMapIntensity: 0.5,
+      side: THREE.DoubleSide,
+    });
+
+    // screen material
     const screenMat = new THREE.ShaderMaterial({
-      // extensions: {
-      //   derivatives:"#extension GL_OES_standard_derivatives : enable"
-      // },
-      // side: THREE.DoubleSide,
+      extensions: {
+        derivatives: "#extension GL_OES_standard_derivatives : enable",
+      },
       uniforms: {
         time: { type: "f", value: 1 },
         progress: { type: "f", value: 0 },
         texture: { value: "none" },
         resolution: { type: "v4", value: new THREE.Vector4() },
       },
+      fog: true,
       vertexShader: vertex,
       fragmentShader: fragment,
     });
-
     this.screenMat = screenMat;
 
-    const TV_FBX = new FBXLoader();
-    const SCREEN_FBX = new FBXLoader();
+    // geometry
+    const TV_FBX_LOADER = new FBXLoader();
+    const SCREEN_FBX_LOADER = new FBXLoader();
+    this.tv = new THREE.Group();
 
-    TV_FBX.load(tv, (obj) => {
-      obj.scale.multiplyScalar(0.2);
-      this._scene.add(obj);
-    });
-
-    SCREEN_FBX.load(screen, (obj) => {
-      obj.traverse((child) => {
-        if (child instanceof THREE.Mesh) child.material = screenMat;
+    for (let i = 0; i < 3; i++) {
+      TV_FBX_LOADER.load(tv, (obj) => {
+        obj.scale.multiplyScalar(0.2);
+        obj.traverse((child) => {
+          if (child.isMesh) child.material = tvMat;
+        });
+        this.tv.add(obj);
       });
 
+    }
+    SCREEN_FBX_LOADER.load(screen, (obj) => {
+      obj.traverse((child) => {
+        if (child.isMesh) child.material = screenMat;
+      });
       obj.scale.multiplyScalar(0.2);
       obj.position.set(0, 0, 0.2);
-
-      this._scene.add(obj);
+      this.tv.add(obj);
     });
+    
+    this._scene.add(this.tv);
+
+    // console.log(this._scene.children[6].position, this._scene.children[5].position)
+    // console.log(this._scene.children);
   }
 
   //
 
   onDocumentMouseMove({ clientX, clientY }) {
-    this.mouse.x = (clientX - window.innerWidth / 2) * 0.02;
-    this.mouse.y = (clientY - window.innerHeight) * 0.02;
+    this.mouse.x = (clientX - window.innerWidth / 2) * 0.04;
+    this.mouse.y = (clientY - window.innerHeight) * 0.04;
   }
 
   onWindowResize() {
