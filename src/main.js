@@ -1,9 +1,12 @@
 import * as THREE from "three";
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
+
+const tv = require("url:./assets/tv.fbx");
+const screen = require("url:./assets/screen.fbx");
 
 class App {
   constructor() {
@@ -17,16 +20,19 @@ class App {
 
     // create scene
     this._scene = new THREE.Scene();
+    this.center = new THREE.Vector3();
+    this.center.z = 5;
+    this.mouse = new THREE.Vector3(0, 0, 1);
 
     // utils
     this._setCamera();
     this._setLight();
     this._setObject();
-    this._setControls();
     this._setting();
 
-    // resize
+    // event
     window.addEventListener("resize", this.onWindowResize.bind(this));
+    window.addEventListener("mousemove", this.onDocumentMouseMove.bind(this));
 
     // rendering
     this.render();
@@ -40,18 +46,6 @@ class App {
     };
     const gui = new dat.GUI();
     gui.add(this.settings, "progress", 0, 1, 0.01);
-  }
-
-  _setControls() {
-    this.controls = new OrbitControls(this._camera, this._container);
-    console.log(this.controls);
-
-    this.controls.target = this.cube.position;
-    this.controls.rotateSpeed = 0.5;
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.1;
-    // this.controls.autoRotateSpeed = 0.5;
-    // this.controls.autoRotate = true;
   }
 
   _setLight() {
@@ -68,36 +62,55 @@ class App {
   }
 
   _setCamera() {
-    this._camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 100);
-    this._camera.position.z = 10;
+    this._camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000);
+    this._camera.position.z = 30;
   }
 
   _setObject() {
-    const geo = new THREE.PlaneBufferGeometry(4, 4);
-
-    // for shader
-    const mat = new THREE.ShaderMaterial({
+    // material
+    const screenMat = new THREE.ShaderMaterial({
       // extensions: {
       //   derivatives:"#extension GL_OES_standard_derivatives : enable"
       // },
-      side: THREE.DoubleSide,
+      // side: THREE.DoubleSide,
       uniforms: {
         time: { type: "f", value: 1 },
         progress: { type: "f", value: 0 },
         texture: { value: "none" },
-        resolution: {type: "v4", value: new THREE.Vector4()}
+        resolution: { type: "v4", value: new THREE.Vector4() },
       },
       vertexShader: vertex,
       fragmentShader: fragment,
     });
 
-    this.mat = mat;
-    const cube = new THREE.Mesh(geo, mat);
-    this.cube = cube;
-    this._scene.add(this.cube);
+    this.screenMat = screenMat;
+
+    const TV_FBX = new FBXLoader();
+    const SCREEN_FBX = new FBXLoader();
+
+    TV_FBX.load(tv, (obj) => {
+      obj.scale.multiplyScalar(0.2);
+      this._scene.add(obj);
+    });
+
+    SCREEN_FBX.load(screen, (obj) => {
+      obj.traverse((child) => {
+        if (child instanceof THREE.Mesh) child.material = screenMat;
+      });
+
+      obj.scale.multiplyScalar(0.2);
+      obj.position.set(0, 0, 0.2);
+
+      this._scene.add(obj);
+    });
   }
 
   //
+
+  onDocumentMouseMove({ clientX, clientY }) {
+    this.mouse.x = (clientX - window.innerWidth / 2) * 0.02;
+    this.mouse.y = (clientY - window.innerHeight) * 0.02;
+  }
 
   onWindowResize() {
     this._camera.aspect = window.innerWidth / window.innerHeight;
@@ -113,12 +126,18 @@ class App {
     this.update();
 
     // shader time update
-    this.mat.uniforms.time.value = performance.now();
-    this.mat.uniforms.progress.value = this.settings.progress;
+    this.screenMat.uniforms.time.value = performance.now();
+    this.screenMat.uniforms.progress.value = this.settings.progress;
+
+    // camera conrols
+    this._camera.position.x += (this.mouse.x - this._camera.position.x) / 20;
+    this._camera.position.y += (-this.mouse.y - this._camera.position.y) / 20;
+    this._camera.lookAt(this.center);
+    this._renderer.render(this._scene, this._camera);
   }
 
   update() {
-    this.controls.update();
+    // this.controls.update();
   }
 }
 
