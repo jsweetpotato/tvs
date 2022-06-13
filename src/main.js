@@ -8,12 +8,14 @@ import vertex from "./shaders/vertex.glsl";
 const tv = require("url:./assets/tv.fbx");
 const screen = require("url:./assets/screen.fbx");
 const TV_COLOR_URL = require("url:./assets/textures/TV_Color.tga");
+const TV_COLOR2_URL = require("url:./assets/textures/TV_Color2.tga");
 const TV_METALLIC_URL = require("url:./assets/textures/TV_Metallic.tga");
 const TV_NORMAL_URL = require("url:./assets/textures/TV_Normal_G+.tga");
 const TV_OCCULSION_URL = require("url:./assets/textures/TV_Occlusion.tga");
 const TV_ROUGHNESS_URL = require("url:./assets/textures/TV_Roughness.tga");
 
 const TV_COLOR = new TGALoader().load(TV_COLOR_URL);
+const TV_COLOR2 = new TGALoader().load(TV_COLOR2_URL);
 const TV_METALLIC = new TGALoader().load(TV_METALLIC_URL);
 const TV_NORMAL = new TGALoader().load(TV_NORMAL_URL);
 const TV_OCCULSION = new TGALoader().load(TV_OCCULSION_URL);
@@ -29,11 +31,12 @@ class App {
     this._renderer.setSize(window.innerWidth, window.innerHeight);
     this._renderer.shadowMap.enabled = true;
     this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
     this._container.appendChild(this._renderer.domElement);
 
     // create scene
     this._scene = new THREE.Scene();
+
+    // controls variables
     this.center = new THREE.Vector3();
     this.center.z = 5;
     this.center.y = 5;
@@ -66,17 +69,18 @@ class App {
   _setLight() {
     const light = new THREE.AmbientLight(0xffffff, 0.2);
 
-    const pointLight = new THREE.PointLight(0xffffff, 4, 40);
+    const pointLight = new THREE.PointLight(0xffffff, 2, 40);
+    const pointLight2 = new THREE.PointLight(0xfa1faf, 0.5, 60);
+    const pointLight3 = new THREE.PointLight(0x11afdf, 1, 1000);
+
     pointLight.position.set(2, 14, 10);
-    pointLight.shadow.bias = -0.01;
+    pointLight2.position.set(6, 6, 7);
+    pointLight3.position.set(-10, 10, 10);
+
     // prevent receive shadow wave phenomenon
     // https://stackoverflow.com/questions/48938170/three-js-odd-striped-shadows
+    pointLight.shadow.bias = -0.01;
     pointLight.castShadow = true;
-
-    const pointLight2 = new THREE.PointLight(0xfa1faf, 0.5, 60);
-    pointLight2.position.set(6, 6, 7);
-    const pointLight3 = new THREE.PointLight(0x11afdf, 1, 1000);
-    pointLight3.position.set(-10, 10, 10);
 
     const sphereSize = 1;
     const pointLightHelper = new THREE.PointLightHelper(pointLight, sphereSize);
@@ -88,7 +92,7 @@ class App {
       pointLight,
       // pointLight2,
       // pointLight3,
-      pointLightHelper,
+      pointLightHelper
       // pointLightHelper2,
       // pointLightHelper3
     );
@@ -115,6 +119,10 @@ class App {
       side: THREE.DoubleSide,
     });
 
+    const tvMat2 = tvMat.clone();
+    tvMat2.map = TV_COLOR2;
+    this.tvMat2 = tvMat2;
+
     // screen material
     const screenMat = new THREE.ShaderMaterial({
       extensions: {
@@ -135,6 +143,7 @@ class App {
     // geometry
     const TV_FBX_LOADER = new FBXLoader();
     const SCREEN_FBX_LOADER = new FBXLoader();
+
     this.tv = new THREE.Group();
 
     TV_FBX_LOADER.load(tv, (obj) => {
@@ -163,25 +172,25 @@ class App {
     setTimeout(() => {
       const newTV = this.tv.clone();
       const newTV2 = this.tv.clone();
-      newTV.position.set(6, 2, 6);
+      newTV.position.set(6, 2, -6);
       newTV2.position.set(-12, 1, -20);
+      newTV2.children[0].children[0].material = this.tvMat2;
       this._scene.add(newTV, newTV2);
-      console.log(newTV2.children[1].children[0].material === newTV.children[1].children[0].material);
+      // console.log(newTV2.children[1].children[0].material === newTV.children[1].children[0].material);
+      // console.log(newTV2.children[1].children[0].material);
 
       // shader 객체 공유.. 따라서 각각 shader material을 만들어 줘야할 것 같음..
       // newTV2.children[1].children[0].material.uniforms.progress.value = 0;
       // newTV2.children[1].children[0].material = this.screenMat2
-    }, 400);
+    }, 3000);
 
-    const box = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshStandardMaterial({ color: 0x0000ff }));
-    box.position.set(-10, 4, 0);
-    box.castShadow = true;
-    this._scene.add(box);
-
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0xff111 }));
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: 0x1a111a })
+    );
     plane.castShadow = true;
     plane.receiveShadow = true;
-    plane.rotateX(-Math.PI/2);
+    plane.rotateX(-Math.PI / 2);
     this._scene.add(plane);
   }
 
@@ -191,7 +200,7 @@ class App {
     event.preventDefault();
     event.stopPropagation();
     this.mouse.x = (event.clientX - window.innerWidth / 2) * 0.02;
-    this.mouse.y = (event.clientY  - window.innerHeight) * 0.02;
+    this.mouse.y = (event.clientY - window.innerHeight) * 0.02;
   }
 
   onWindowResize() {
