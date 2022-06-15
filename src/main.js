@@ -43,9 +43,9 @@ class App {
     this.mouse = new THREE.Vector3(0, 0, 1);
 
     // utils
+    this._setupVideo();
     this._setCamera();
     this._setLight();
-    this._setObject();
     this._setting();
 
     // event
@@ -105,6 +105,46 @@ class App {
     this._camera.position.z = 30;
   }
 
+  _setupVideo() {
+    const video = document.createElement("video");
+    const that = this;
+
+    //웹캠 지원 확인
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const constraints = {
+        //비디오 해상도 지정
+        video: { width: 240, height: 240 },
+      };
+      navigator.mediaDevices
+        .getUserMedia(constraints)
+        .then((stream) => {
+          video.srcObject = stream;
+          video.play();
+
+          //three.js 비디오 텍스쳐 객체 생성
+          const videoTexture = new THREE.VideoTexture(video);
+          this._videoTexture = videoTexture;
+          this._isVideo = true;
+          this._uniformsUpdate = true;
+
+          this._setObject();
+
+          //카메라 영상에 대한 텍스쳐 맵핑 객체가 준비된 상태에서 _setupModel 메소드가 호출됨
+        })
+        .catch(function (error) {
+          that._isVideo = false;
+          that._uniformsUpdate = true;
+          that._setObject();
+          console.error("카메라에 접근할 수 없습니다.", error);
+        });
+    } else {
+      this._isVideo = false;
+      this._uniformsUpdate = true;
+      this._setObject();
+      console.error("MediaDevices 인터페이스 사용 불가");
+    }
+  }
+
   _setObject() {
     // tv material
     const tvMat = new THREE.MeshStandardMaterial({
@@ -133,6 +173,8 @@ class App {
         progress: { type: "f", value: 2 },
         texture: { value: "none" },
         resolution: { type: "v4", value: new THREE.Vector4() },
+        texture: { type: "t", value: this._videoTexture },
+        isVideo: {value: this._isVideo}
       },
       fog: true,
       vertexShader: vertex,
@@ -169,24 +211,24 @@ class App {
 
     this._scene.add(this.tv);
 
-    setTimeout(() => {
-      const newTV = this.tv.clone();
-      const newTV2 = this.tv.clone();
-      newTV.position.set(6, 2, -6);
-      newTV2.position.set(-12, 1, -20);
-      newTV2.children[0].children[0].material = this.tvMat2;
-      this._scene.add(newTV, newTV2);
-      // console.log(newTV2.children[1].children[0].material === newTV.children[1].children[0].material);
-      // console.log(newTV2.children[1].children[0].material);
+    // setTimeout(() => {
+    //   const newTV = this.tv.clone();
+    //   const newTV2 = this.tv.clone();
+    //   newTV.position.set(6, 2, -6);
+    //   newTV2.position.set(-12, 1, -20);
+    //   newTV2.children[0].children[0].material = this.tvMat2;
+    //   this._scene.add(newTV, newTV2);
+    //   // console.log(newTV2.children[1].children[0].material === newTV.children[1].children[0].material);
+    //   // console.log(newTV2.children[1].children[0].material);
 
-      // shader 객체 공유.. 따라서 각각 shader material을 만들어 줘야할 것 같음..
-      // newTV2.children[1].children[0].material.uniforms.progress.value = 0;
-      // newTV2.children[1].children[0].material = this.screenMat2
-    }, 3000);
+    //   // shader 객체 공유.. 따라서 각각 shader material을 만들어 줘야할 것 같음..
+    //   // newTV2.children[1].children[0].material.uniforms.progress.value = 0;
+    //   // newTV2.children[1].children[0].material = this.screenMat2
+    // }, 3000);
 
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
-      new THREE.MeshStandardMaterial({ color: 0x1a111a })
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a })
     );
     plane.castShadow = true;
     plane.receiveShadow = true;
@@ -217,8 +259,10 @@ class App {
     // this.update();
 
     // shader time update
-    this.screenMat.uniforms.time.value = performance.now();
-    this.screenMat.uniforms.progress.value = this.settings.progress;
+    if (this._uniformsUpdate) {
+      this.screenMat.uniforms.time.value = performance.now();
+      this.screenMat.uniforms.progress.value = this.settings.progress;
+    }
 
     // camera conrols
     this._camera.position.x += (this.mouse.x - this._camera.position.x) / 20;
