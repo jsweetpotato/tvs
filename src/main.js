@@ -113,7 +113,7 @@ class App {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const constraints = {
         //비디오 해상도 지정
-        video: { width: 240, height: 240 },
+        video: { width: 480, height: 480 },
       };
       navigator.mediaDevices
         .getUserMedia(constraints)
@@ -123,7 +123,14 @@ class App {
 
           //three.js 비디오 텍스쳐 객체 생성
           const videoTexture = new THREE.VideoTexture(video);
+          videoTexture.minFilter = THREE.NearestFilter;
+          const testTexture = new THREE.TextureLoader("assets/textures/test.png");
+          this.testTexture = testTexture;
+          // videoTexture.wrapS = 100;
+          // videoTexture.wrapT = 100;
+          videoTexture.offset.set(20, 20);
           this._videoTexture = videoTexture;
+          console.log(this._videoTexture);
           this._isVideo = true;
           this._uniformsUpdate = true;
 
@@ -174,7 +181,7 @@ class App {
         texture: { value: "none" },
         resolution: { type: "v4", value: new THREE.Vector4() },
         texture: { type: "t", value: this._videoTexture },
-        isVideo: {value: this._isVideo}
+        isVideo: { value: this._isVideo },
       },
       fog: true,
       vertexShader: vertex,
@@ -241,7 +248,7 @@ class App {
   onMouseMove(event) {
     event.preventDefault();
     event.stopPropagation();
-    this.mouse.x = (event.clientX - window.innerWidth / 2) * 0.02;
+    this.mouse.x = (event.clientX - window.innerWidth / 2) * 0.05;
     this.mouse.y = (event.clientY - window.innerHeight) * 0.02;
   }
 
