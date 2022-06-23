@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as dat from "dat.gui";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { TGALoader } from "three/examples/jsm/loaders/TGALoader";
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 
@@ -14,16 +15,11 @@ const TV_NORMAL_URL = require("url:./assets/textures/TV_Normal_G+.tga");
 const TV_OCCULSION_URL = require("url:./assets/textures/TV_Occlusion.tga");
 const TV_ROUGHNESS_URL = require("url:./assets/textures/TV_Roughness.tga");
 
-const TV_COLOR = new TGALoader().load(TV_COLOR_URL);
-const TV_COLOR2 = new TGALoader().load(TV_COLOR2_URL);
-const TV_METALLIC = new TGALoader().load(TV_METALLIC_URL);
-const TV_NORMAL = new TGALoader().load(TV_NORMAL_URL);
-const TV_OCCULSION = new TGALoader().load(TV_OCCULSION_URL);
-const TV_ROUGHNESS = new TGALoader().load(TV_ROUGHNESS_URL);
+const pos = [-11, 2, -16, -18, 1, -8, 14, 1, -17, 5, 2, -9, -4, 3, -30, 0, 4, -40];
 
 class App {
   constructor() {
-    this._container = document.querySelector("div");
+    this._container = document.querySelector(".canvas-container");
 
     // renderer setting
     this._renderer = new THREE.WebGL1Renderer({ antialias: true });
@@ -35,6 +31,7 @@ class App {
 
     // create scene
     this._scene = new THREE.Scene();
+    this._scene.fog = new THREE.Fog(0x00ffff, 0.0, 100.0);
 
     // controls variables
     this.center = new THREE.Vector3();
@@ -46,7 +43,11 @@ class App {
     this._setupVideo();
     this._setCamera();
     this._setLight();
+    this._setManager();
     this._setting();
+
+    this._isVideo;
+    this._uniformsUpdate;
 
     // event
     window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -70,11 +71,11 @@ class App {
     const light = new THREE.AmbientLight(0xffffff, 0.2);
 
     const pointLight = new THREE.PointLight(0xffffff, 2, 40);
-    const pointLight2 = new THREE.PointLight(0xfa1faf, 0.5, 60);
+    const rectAriaLight = new THREE.RectAreaLight(0xffffff, 2, 6, 4.5);
     const pointLight3 = new THREE.PointLight(0x11afdf, 1, 1000);
 
     pointLight.position.set(2, 14, 10);
-    pointLight2.position.set(6, 6, 7);
+    rectAriaLight.position.set(-0.5, 3, 4);
     pointLight3.position.set(-10, 10, 10);
 
     // prevent receive shadow wave phenomenon
@@ -84,16 +85,16 @@ class App {
 
     const sphereSize = 1;
     const pointLightHelper = new THREE.PointLightHelper(pointLight, sphereSize);
-    const pointLightHelper2 = new THREE.PointLightHelper(pointLight2, sphereSize);
+    const rectAriaLightHelper = new RectAreaLightHelper(rectAriaLight, 0xfffff);
     const pointLightHelper3 = new THREE.PointLightHelper(pointLight3, sphereSize);
 
     this._scene.add(
       light,
       pointLight,
-      // pointLight2,
+      // rectAriaLight,
       // pointLight3,
       pointLightHelper
-      // pointLightHelper2,
+      // rectAriaLightHelper
       // pointLightHelper3
     );
 
@@ -124,15 +125,10 @@ class App {
           //three.js 비디오 텍스쳐 객체 생성
           const videoTexture = new THREE.VideoTexture(video);
           videoTexture.minFilter = THREE.NearestFilter;
-          const testTexture = new THREE.TextureLoader("assets/textures/test.png");
-          this.testTexture = testTexture;
-          // videoTexture.wrapS = 100;
-          // videoTexture.wrapT = 100;
-          videoTexture.offset.set(20, 20);
+          videoTexture.format = THREE.LuminanceFormat;
           this._videoTexture = videoTexture;
-          console.log(this._videoTexture);
           this._isVideo = true;
-          this._uniformsUpdate = true;
+          this._uniformsUpdate = false;
 
           this._setObject();
 
@@ -151,8 +147,45 @@ class App {
       console.error("MediaDevices 인터페이스 사용 불가");
     }
   }
+  _setManager() {
+    const manager = new THREE.LoadingManager();
+
+    const $progress = document.querySelector("progress");
+    const $loading_Div = document.querySelector(".loading");
+
+    manager.onProgress = (url, loaded, total) => {
+      $progress.value = (loaded / total) * 100;
+    };
+
+    manager.onLoad = () => {
+      for (let i = 0; i < 7; i++) {
+        const newTV = this.tv.clone();
+        newTV.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+        this._scene.add(newTV);
+      }
+      $loading_Div.classList.add("fade-out");
+      $loading_Div.addEventListener("animationend", () => {
+        $loading_Div.style.visibility = "hidden";
+      });
+    };
+
+    this.manager = manager;
+  }
 
   _setObject() {
+    // loaders
+    const loader = new FBXLoader(this.manager);
+    const tgaLoader = new TGALoader(this.manager);
+
+    const TV_COLOR = tgaLoader.load(TV_COLOR_URL);
+    const TV_COLOR2 = tgaLoader.load(TV_COLOR2_URL);
+    const TV_METALLIC = tgaLoader.load(TV_METALLIC_URL);
+    const TV_NORMAL = tgaLoader.load(TV_NORMAL_URL);
+    const TV_OCCULSION = tgaLoader.load(TV_OCCULSION_URL);
+    const TV_ROUGHNESS = tgaLoader.load(TV_ROUGHNESS_URL);
+
+    this.tv = new THREE.Group();
+
     // tv material
     const tvMat = new THREE.MeshStandardMaterial({
       map: TV_COLOR,
@@ -164,38 +197,37 @@ class App {
       aoMap: TV_OCCULSION,
       aoMapIntensity: 0.5,
       side: THREE.DoubleSide,
+      fog: true,
     });
 
-    const tvMat2 = tvMat.clone();
-    tvMat2.map = TV_COLOR2;
-    this.tvMat2 = tvMat2;
-
     // screen material
+    const uniforms = {
+      time: { type: "f", value: 1 },
+      progress: { type: "f", value: 2 },
+      offset: { type: "f", value: 0 },
+      resolution: { type: "v4", value: new THREE.Vector4() },
+      texture: { type: "t", value: this._videoTexture },
+      isVideo: { value: this._isVideo },
+      fogColor: { type: "c", value: this._scene.fog.color },
+      fogNear: { type: "f", value: this._scene.fog.near },
+      fogFar: { type: "f", value: this._scene.fog.far },
+    };
+
     const screenMat = new THREE.ShaderMaterial({
       extensions: {
         derivatives: "#extension GL_OES_standard_derivatives : enable",
       },
-      uniforms: {
-        time: { type: "f", value: 1 },
-        progress: { type: "f", value: 2 },
-        texture: { value: "none" },
-        resolution: { type: "v4", value: new THREE.Vector4() },
-        texture: { type: "t", value: this._videoTexture },
-        isVideo: { value: this._isVideo },
-      },
+      uniforms: uniforms,
       fog: true,
+      transparent: true,
       vertexShader: vertex,
       fragmentShader: fragment,
     });
     this.screenMat = screenMat;
 
     // geometry
-    const TV_FBX_LOADER = new FBXLoader();
-    const SCREEN_FBX_LOADER = new FBXLoader();
 
-    this.tv = new THREE.Group();
-
-    TV_FBX_LOADER.load(tv, (obj) => {
+    loader.load(tv, (obj) => {
       obj.scale.multiplyScalar(0.2);
       obj.traverse((child) => {
         if (child.isMesh) {
@@ -207,31 +239,16 @@ class App {
       this.tv.add(obj);
     });
 
-    SCREEN_FBX_LOADER.load(screen, (obj) => {
+    loader.load(screen, (obj) => {
       obj.traverse((child) => {
         if (child.isMesh) child.material = screenMat;
       });
       obj.scale.multiplyScalar(0.2);
-      obj.position.set(0, 0, 0.2);
+      obj.position.set(0, 0, 0.01);
       this.tv.add(obj);
     });
 
-    this._scene.add(this.tv);
-
-    // setTimeout(() => {
-    //   const newTV = this.tv.clone();
-    //   const newTV2 = this.tv.clone();
-    //   newTV.position.set(6, 2, -6);
-    //   newTV2.position.set(-12, 1, -20);
-    //   newTV2.children[0].children[0].material = this.tvMat2;
-    //   this._scene.add(newTV, newTV2);
-    //   // console.log(newTV2.children[1].children[0].material === newTV.children[1].children[0].material);
-    //   // console.log(newTV2.children[1].children[0].material);
-
-    //   // shader 객체 공유.. 따라서 각각 shader material을 만들어 줘야할 것 같음..
-    //   // newTV2.children[1].children[0].material.uniforms.progress.value = 0;
-    //   // newTV2.children[1].children[0].material = this.screenMat2
-    // }, 3000);
+    // this._scene.add(this.tv);
 
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
@@ -248,7 +265,7 @@ class App {
   onMouseMove(event) {
     event.preventDefault();
     event.stopPropagation();
-    this.mouse.x = (event.clientX - window.innerWidth / 2) * 0.05;
+    this.mouse.x = (event.clientX - window.innerWidth / 2) * 0.02;
     this.mouse.y = (event.clientY - window.innerHeight) * 0.02;
   }
 
@@ -269,6 +286,10 @@ class App {
     if (this._uniformsUpdate) {
       this.screenMat.uniforms.time.value = performance.now();
       this.screenMat.uniforms.progress.value = this.settings.progress;
+    }
+
+    if (this._isVideo) {
+      this.screenMat.uniforms.offset.value = this.mouse.x * 0.001;
     }
 
     // camera conrols
