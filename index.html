@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/style.css" />
+    <script src="./src/main.js" type="module" defer></script>
+    <title>tvs</title>
+  </head>
+  <body>
+    <div class="loading container">
+      <progress id="file" value="0" min="0" max="100"></progress>
+      <button>PLAY</button>
+    </div>
+    <div class="buttons container">
+      <button class="view-demo"><span>View </span><span>Demo</span></button>
+    </div>
+    <div class="canvas container"></div>
+    <div class="BG-titles container">
+      <ul class="title-ul">
+        <li class="li-1">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-2">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-3">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-4">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-5">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-6">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-7">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+        <li class="li-8">
+          <div class="div-1">Heart Heart Heart Heart Heart Heart&#160;</div>
+          <div class="div-2">Heart Heart Heart Heart Heart Heart&#160;</div>
+        </li>
+      </ul>
+      <div class="filter"></div>
+    </div>
+    <video id="video" loop crossorigin="anonymous" playsinline style="display: none">
+      <source src="src/assets/heart2.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' />
+    </video>
+  </body>
+</html>

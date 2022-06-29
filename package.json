@@ -1,0 +1,29 @@
+{
+  "name": "default",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsweetpotato/Three-shader-base.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jsweetpotato/Three-shader-base/issues"
+  },
+  "homepage": "https://github.com/jsweetpotato/Three-shader-base#readme",
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "three": "^0.141.0",
+    "three-orbitcontrols": "^2.110.3"
+  },
+  "devDependencies": {
+    "@parcel/transformer-glsl": "^2.6.0",
+    "parcel": "^2.6.0"
+  }
+}
