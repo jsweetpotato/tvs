@@ -5,6 +5,7 @@ import { TGALoader } from "three/examples/jsm/loaders/TGALoader";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
+import gsap from 'gsap';
 
 const tv = require("url:./assets/tv.fbx");
 const screen = require("url:./assets/screen.fbx");
@@ -299,7 +300,7 @@ class App {
     this._renderer.render(this._scene, this._camera);
   }
 
-  update() {}
+  update() { }
 }
 
 window.onload = new App();

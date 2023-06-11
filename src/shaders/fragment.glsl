@@ -32,6 +32,7 @@ void main(){
   if(isVideo) color = rgbShift(texture, vUv, vec2(offset,0.));
 
   gl_FragColor =  vec4(color,1.0);
+  
   #ifdef USE_FOG
     #ifdef USE_LOGDEPTHBUF_EXT
         float depth = gl_FragDepthEXT / gl_FragCoord.w;

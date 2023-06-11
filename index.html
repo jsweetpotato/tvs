@@ -1,67 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        position: relative;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      position: relative;
+    }
+
+    .loading {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100vw;
+      height: 100vh;
+      background-color: black;
+      z-index: 1;
+    }
+
+    progress {
+      -webkit-appearance: none;
+      width: 100vw;
+      border-radius: 0;
+      background-color: aliceblue;
+      height: 4px;
+    }
+
+    ::-webkit-progress-bar {
+      background-color: aliceblue;
+    }
+
+    ::-webkit-progress-value {
+      background-color: coral;
+    }
+
+    ::-moz-progress-bar {
+      background-color: coral;
+    }
+
+    @keyframes fade-out {
+      0% {
+        opacity: 1;
       }
 
-      .loading {
-        position: absolute;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        width: 100vw;
-        height: 100vh;
-        background-color: black;
-        z-index: 1;
+      100% {
+        opacity: 0;
       }
+    }
 
-      progress {
-        -webkit-appearance: none;
-        width: 100vw;
-        border-radius: 0;
-        background-color: aliceblue;
-        height: 4px;
-      }
-      ::-webkit-progress-bar {
-        background-color: aliceblue;
-      }
-      ::-webkit-progress-value {
-        background-color: coral;
-      }
-      ::-moz-progress-bar {
-        background-color: coral;
-      }
+    .fade-out {
+      animation: fade-out 1s 1s ease-in-out;
+    }
+  </style>
+  <script src="./src/main.js" type="module" defer></script>
+  <title>cube</title>
+</head>
 
-      @keyframes fade-out {
-        0% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 0;
-        }
-      }
+<body>
+  <div class="loading">
+    <progress id="file" value="0" min="0" max="100"></progress>
+  </div>
+  <div class="canvas-container"></div>
+  <div class="controls"></div>
+</body>
 
-      .fade-out {
-        animation: fade-out 1s 1s ease-in-out;
-      }
-    </style>
-    <script src="./src/main.js" type="module" defer></script>
-    <title>cube</title>
-  </head>
-  <body>
-    <div class="loading">
-      <progress id="file" value="0" min="0" max="100"></progress>
-    </div>
-    <div class="canvas-container"></div>
-  </body>
 </html>
