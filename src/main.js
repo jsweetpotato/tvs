@@ -1,20 +1,13 @@
 import * as THREE from "three";
 import * as dat from "dat.gui";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
-import { TGALoader } from "three/examples/jsm/loaders/TGALoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper";
 import fragment from "./shaders/fragment.glsl";
 import vertex from "./shaders/vertex.glsl";
 import gsap from 'gsap';
 
-const tv = require("url:./assets/tv.fbx");
-const screen = require("url:./assets/screen.fbx");
-const TV_COLOR_URL = require("url:./assets/textures/TV_Color.tga");
-const TV_COLOR2_URL = require("url:./assets/textures/TV_Color2.tga");
-const TV_METALLIC_URL = require("url:./assets/textures/TV_Metallic.tga");
-const TV_NORMAL_URL = require("url:./assets/textures/TV_Normal_G+.tga");
-const TV_OCCULSION_URL = require("url:./assets/textures/TV_Occlusion.tga");
-const TV_ROUGHNESS_URL = require("url:./assets/textures/TV_Roughness.tga");
+const tv = require("url:./assets/model/tv.glb");
+const screen = require("url:./assets/model/screen.glb");
 
 const pos = [-11, 2, -16, -18, 1, -8, 14, 1, -17, 5, 2, -9, -4, 3, -30, 0, 4, -40];
 
@@ -148,6 +141,7 @@ class App {
       console.error("MediaDevices 인터페이스 사용 불가");
     }
   }
+
   _setManager() {
     const manager = new THREE.LoadingManager();
 
@@ -159,11 +153,11 @@ class App {
     };
 
     manager.onLoad = () => {
-      for (let i = 0; i < 7; i++) {
-        const newTV = this.tv.clone();
-        newTV.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
-        this._scene.add(newTV);
-      }
+      // for (let i = 0; i < 7; i++) {
+      //   const newTV = this.tv.clone();
+      //   newTV.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+      //   this._scene.add(newTV);
+      // }
       $loading_Div.classList.add("fade-out");
       $loading_Div.addEventListener("animationend", () => {
         $loading_Div.style.visibility = "hidden";
@@ -175,31 +169,11 @@ class App {
 
   _setObject() {
     // loaders
-    const loader = new FBXLoader(this.manager);
-    const tgaLoader = new TGALoader(this.manager);
-
-    const TV_COLOR = tgaLoader.load(TV_COLOR_URL);
-    const TV_COLOR2 = tgaLoader.load(TV_COLOR2_URL);
-    const TV_METALLIC = tgaLoader.load(TV_METALLIC_URL);
-    const TV_NORMAL = tgaLoader.load(TV_NORMAL_URL);
-    const TV_OCCULSION = tgaLoader.load(TV_OCCULSION_URL);
-    const TV_ROUGHNESS = tgaLoader.load(TV_ROUGHNESS_URL);
+    const loader = new GLTFLoader(this.manager);
 
     this.tv = new THREE.Group();
 
-    // tv material
-    const tvMat = new THREE.MeshStandardMaterial({
-      map: TV_COLOR,
-      normalMap: TV_NORMAL,
-      roughnessMap: TV_ROUGHNESS,
-      roughness: 0.9,
-      metalnessMap: TV_METALLIC,
-      metalness: 0.2,
-      aoMap: TV_OCCULSION,
-      aoMapIntensity: 0.5,
-      side: THREE.DoubleSide,
-      fog: true,
-    });
+
 
     // screen material
     const uniforms = {
@@ -229,27 +203,22 @@ class App {
     // geometry
 
     loader.load(tv, (obj) => {
-      obj.scale.multiplyScalar(0.2);
-      obj.traverse((child) => {
-        if (child.isMesh) {
-          child.material = tvMat;
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      this.tv.add(obj);
+      this.tv.add(obj.scene);
     });
 
     loader.load(screen, (obj) => {
-      obj.traverse((child) => {
-        if (child.isMesh) child.material = screenMat;
-      });
-      obj.scale.multiplyScalar(0.2);
-      obj.position.set(0, 0, 0.01);
-      this.tv.add(obj);
+      // obj.traverse((child) => {
+      //   if (child.isMesh) child.material = screenMat;
+      // });
+      // obj.scale.multiplyScalar(0.2);
+      // obj.position.set(0, 0, 0.01);
+      obj.scene.children[0].material = this.screenMat;
+      this.tv.add(obj.scene.children[0]);
     });
 
-    // this._scene.add(this.tv);
+    this.tv.scale.set(10, 10, 10)
+
+    this._scene.add(this.tv);
 
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
